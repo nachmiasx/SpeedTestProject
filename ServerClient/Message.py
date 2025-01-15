@@ -35,23 +35,21 @@ def parsed_message_request(request_message):
 
     return file_size
 
-
 def parsed_message_payload(payload_message):
-    if len(payload_message) < 21:
-        raise ValueError("Payload message incorrect length")
+    try:
 
-    cookie, message_type, total_segment_count, current_count = struct.unpack('>IBQ', payload_message[:21])
-    message_body = payload_message[21:]
+        magic_cookie, message_type, total_segments, current_segment = struct.unpack("!I B Q Q",
+                                                                                    payload_message[:21])
+        payload_data = payload_message[21:]
+        if magic_cookie != MAGIC_COOKIE or message_type != 0x4:
+            print("Invalid message header")
+            return None
+        return total_segments, current_segment, payload_data
 
-    if current_count > total_segment_count:
-        raise ValueError("Message is corrupt, current segment count is greater than total segment count")
+    except struct.error as e:
+        print(f"Error unpacking payload message: {e}")
 
-    if not _valid_message(cookie, "payload", message_type):
-        raise ValueError("Corrupted payload message")
 
-    #להוסיף בדיקה שבוקת שההודעה שהגיעה אכן הגיעה בגודל הרצוי וגם לשים לב ללוגיקה בין הפרוטוקולים
-
-    return total_segment_count, current_count, message_body
 
 def build_offer_message(udp_port, tcp_port):
     """
