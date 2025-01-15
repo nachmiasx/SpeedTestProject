@@ -1,9 +1,9 @@
-import concurrent
+import concurrent.futures
 import socket
-import threading
+
 import time
 from Constants import (
-    BROADCAST_PORT_TO, BUFFER_SIZE, BROADCAST_IP, UDP_SERVER_PORT, TCP_SERVER_PORT
+    BROADCAST_PORT_TO, BUFFER_SIZE, UDP_TIMEOUT
 )
 from ServerClient.Message import parsed_message_offer, build_request_message, parsed_message_payload
 
@@ -18,8 +18,10 @@ def main():
         # Keep Waiting for valid offer Message
         while True:
             offer_message, (server_ip, server_port) = sock.recvfrom(BUFFER_SIZE)
+            print("Received offer from %s:%s" % (server_ip, server_port))
             try:
                 tcp_port, udp_port = parsed_message_offer(offer_message)
+                print(f"TCP port:{tcp_port} ---- UDP port:{udp_port}")
                 break
             except Exception as e:
                 print(e)
@@ -32,6 +34,7 @@ def main():
                 ) for _ in range(udp_num)
             ]
 
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=tcp_num) as executor:
             tcp_thread = [
                 executor.submit(
@@ -39,6 +42,9 @@ def main():
                     server_ip = server_ip, tcp_port = tcp_port, file_size = file_size
                 ) for _ in range(tcp_num)
             ]
+
+        print(f"UDP thread count:{udp_thread}")
+        print(f"UDP thread count:{tcp_thread}")
 
 
 def start_up():
@@ -62,11 +68,13 @@ def speed_test():
     pass
 
 def run_udp(server_ip, udp_port, file_size):
+
     request_message = build_request_message(file_size)
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.bind(("", 0))  # port 0 means dynamic port allocation
         sock.sendto(request_message, (server_ip, udp_port))
+        sock.settimeout(UDP_TIMEOUT)
 
         packet_acc = 0
         received_in_bytes = 0
@@ -96,17 +104,21 @@ def run_udp(server_ip, udp_port, file_size):
 
 def run_tcp(server_ip, tcp_port, file_size):
     request_message = build_request_message(file_size)
-
+    print("aviv")
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(server_ip, tcp_port)
 
-    sock.send(f"{file_size}\n".encode())
+    sock.sendall(f"{request_message}\n".encode())
+    print("TCP connections sent")
     start_time = time.time()
 
-    response = sock.recv(file_size)  # צריך לוודא שאין בעיה לקבל הכל במכה אחת ואולי צריך לטפל בבעיות
+    response = sock.recv(file_size)
 
     end_time = time.time()
     duration_seconds = end_time - start_time
+
+    print(f"TCP got response from server, duration: {duration_seconds}")
+
     return duration_seconds, len(response)
 
 

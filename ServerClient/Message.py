@@ -16,7 +16,7 @@ def parsed_message_offer(offer_message):
 
         cookie, message_type, udp_port, tcp_port = struct.unpack('>IBHH', offer_message)
 
-        if _valid_message(cookie, "offer", message_type):
+        if not _valid_message(cookie, "offer", message_type):
             raise ValueError("Corrupted offer message")
 
         return udp_port, tcp_port

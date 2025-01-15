@@ -7,7 +7,7 @@ MAGIC_COOKIE = 0xabcddcba
 
 CODES = {'offer':0x2, 'request':0x3, 'response':0x4,}
 
-
+UDP_TIMEOUT = 3
 
 BROADCAST_IP = '255.255.255.255'
 UDP_SERVER_PORT = 1903

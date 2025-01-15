@@ -24,12 +24,12 @@ def main():
 
     udp_thread = threading.Thread(
         target=run_udp_server,
-        kwargs=dict(udp_port=UDP_SERVER_PORT, tcp_port=TCP_SERVER_PORT)
+        args=(UDP_SERVER_PORT,)
     )
 
     tcp_thread = threading.Thread(
         target=run_tcp_server,
-        kwargs=dict(udp_port=UDP_SERVER_PORT, tcp_port=TCP_SERVER_PORT)
+        args=(TCP_SERVER_PORT,)
     )
 
     print(f'Server started, listening on IP address {SERVER_IP}')
@@ -55,25 +55,26 @@ def broadcasting(udp_port, tcp_port) -> None:
 
 
 
-def run_tcp_server() -> None:
+def run_tcp_server(tcp_port) -> None:
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(SERVER_IP, TCP_SERVER_PORT)
+    sock.bind((SERVER_IP, tcp_port))
     sock.listen(5)
     while True:
         client_sock, client_addr = sock.accept()
 
         payload_thread = threading.Thread(
             target=sent_payload_tcp,
-            args=(client_sock)
+            args=(client_sock,)
         ).start()
 
 
 def sent_payload_tcp(client_sock):
     try:
+        print("Sending message")
         message = client_sock.recv(BUFFER_SIZE)
         file_size = parsed_message_request(message)
 
-        print(f"DBG: Received filesize of {BUFFER_SIZE} bytes")
+        print(f"DBG: Received filesize of {len(file_size)} bytes")
 
         payload = b"a" * file_size  # Need to insert file size
         client_sock.sendall(payload)
@@ -82,9 +83,9 @@ def sent_payload_tcp(client_sock):
         (f"Error processing TCP client request: {e}")
 
 
-def run_udp_server() -> None:
+def run_udp_server(udp_port) -> None:
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind(SERVER_IP, UDP_SERVER_PORT)
+    sock.bind((SERVER_IP, udp_port))
     while True:
         raw_data, client_addr = sock.recvfrom(BUFFER_SIZE)
         payload_thread = threading.Thread(
