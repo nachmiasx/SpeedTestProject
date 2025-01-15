@@ -5,7 +5,7 @@ BUFFER_SIZE = 1024
 PACKET_SIZE = 1024
 MAGIC_COOKIE = 0xabcddcba
 
-CODES = {'offer':0x2, 'request':0x3, 'response':0x4,}
+CODES = {'offer':0x2, 'request':0x3, 'payload':0x4,}
 
 UDP_TIMEOUT = 3
 

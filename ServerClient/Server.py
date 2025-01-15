@@ -32,7 +32,7 @@ def main():
         args=(TCP_SERVER_PORT,)
     )
 
-    print(f'Server started, listening on IP address {SERVER_IP}')
+
     tcp_thread.start()
     udp_thread.start()
     broadcast_thread.start()
@@ -54,10 +54,11 @@ def broadcasting(udp_port, tcp_port) -> None:
             print(e) #NEED TO CHANGEEEE
 
 
-
 def run_tcp_server(tcp_port) -> None:
+    print("aaaaa")
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind((SERVER_IP, tcp_port))
+    print(f"start listening on server port {SERVER_IP}:{TCP_SERVER_PORT}")
     sock.listen(5)
     while True:
         client_sock, client_addr = sock.accept()
@@ -70,22 +71,25 @@ def run_tcp_server(tcp_port) -> None:
 
 def sent_payload_tcp(client_sock):
     try:
-        print("Sending message")
-        message = client_sock.recv(BUFFER_SIZE)
-        file_size = parsed_message_request(message)
 
-        print(f"DBG: Received filesize of {len(file_size)} bytes")
+        file_size = client_sock.recv(64)
+        print("file size", file_size)
+        if not file_size:
+            client_sock.close()
+            return
+        file_size = int(file_size.strip())
+        # file_size = parsed_message_request(message)
 
         payload = b"a" * file_size  # Need to insert file size
         client_sock.sendall(payload)
-        print(f"DBG: Sent response of length: {len(payload)}")
+        print(f"TCP:::::Sent response of length: {len(payload)}")
     except Exception as e:
         (f"Error processing TCP client request: {e}")
 
 
 def run_udp_server(udp_port) -> None:
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind((SERVER_IP, udp_port))
+    sock.bind(("", udp_port))
     while True:
         raw_data, client_addr = sock.recvfrom(BUFFER_SIZE)
         payload_thread = threading.Thread(
@@ -97,9 +101,7 @@ def run_udp_server(udp_port) -> None:
 def send_payload_udp(client_addr, data) -> None:
     file_size = parsed_message_request(data)
     packets_num = math.ceil(file_size/PACKET_SIZE)
-
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
 
     for seq in range(packets_num):
         start_index = seq * PACKET_SIZE
@@ -111,9 +113,7 @@ def send_payload_udp(client_addr, data) -> None:
         payload = build_payload_message_udp(packets_num, seq, file)
 
         sock.sendto(payload, client_addr)
-        print(f"DBG: Sent response of length: {len(payload)}")
-
-
+        print(f"UDP:::Sent response of length: {len(payload)}")
 
 
 
