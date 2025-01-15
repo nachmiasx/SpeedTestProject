@@ -68,7 +68,7 @@ def build_request_message(file_size):
     message_type = CODES["request"]  # Should be 0x3
     return struct.pack('>IBQ', MAGIC_COOKIE, message_type, file_size)
 
-def build_payload_message(total_segment_count, current_segment_count, payload):
+def build_payload_message_udp(total_segment_count, current_segment_count, payload):
     """
     Build a payload message.
     Format: Magic cookie (4 bytes), Message type (1 byte),

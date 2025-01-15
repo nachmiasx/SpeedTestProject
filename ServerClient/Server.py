@@ -1,11 +1,13 @@
+import math
 import socket
 import threading
 import time
 
 from Constants import (
-    BROADCAST_PORT_TO, BROADCAST_PORT_FROM, BUFFER_SIZE, BROADCAST_IP, UDP_SERVER_PORT, TCP_SERVER_PORT
+    BROADCAST_PORT_TO, BROADCAST_PORT_FROM, BUFFER_SIZE, BROADCAST_IP, UDP_SERVER_PORT, TCP_SERVER_PORT,
+    PACKET_SIZE
 )
-
+from ServerClient.Message import build_offer_message, pasred_message_request, build_payload_message_udp
 
 SERVER_IP = socket.gethostbyname(socket.gethostname())
 BROADCAST_ADDR_TO = (BROADCAST_IP, BROADCAST_PORT_TO) # This address is to sent to all localhost
@@ -40,7 +42,7 @@ def main():
     broadcast_thread.join()
 
 def broadcasting(udp_port, tcp_port) -> None:
-    massage = b"Hello World!"
+    massage = build_offer_message(udp_port, tcp_port)
     while True:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -59,6 +61,7 @@ def run_tcp_server() -> None:
     sock.listen(5)
     while True:
         client_sock, client_addr = sock.accept()
+
         payload_thread = threading.Thread(
             target=sent_payload_tcp,
             args=(client_sock)
@@ -67,13 +70,14 @@ def run_tcp_server() -> None:
 
 def sent_payload_tcp(client_sock):
     try:
-        message: bytes = client_sock.recv(BUFFER_SIZE)
-        # file_size = parse_request_message(message)
+        message = client_sock.recv(BUFFER_SIZE)
+        file_size = pasred_message_request(message)
+
         print(f"DBG: Received filesize of {BUFFER_SIZE} bytes")
 
-        file = b"a"  # Need to insert file size
-        client_sock.sendall(file)
-        print(f"DBG: Sent response of length: {len(file)}")
+        payload = b"a" * file_size  # Need to insert file size
+        client_sock.sendall(payload)
+        print(f"DBG: Sent response of length: {len(payload)}")
     except Exception as e:
         (f"Error processing TCP client request: {e}")
 
@@ -90,19 +94,24 @@ def run_udp_server() -> None:
 
 
 def send_payload_udp(client_addr, data) -> None:
-    # צריך לחלץ את גודל הקובץ מההודעה ואז לשלוח בהתאם מספר פקטות
-    file_size = 1024
-    packets_num = file_size//BUFFER_SIZE
+    file_size = pasred_message_request(data)
+    packets_num = math.ceil(file_size/PACKET_SIZE)
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
 
     for seq in range(packets_num):
-        start_index = seq * BUFFER_SIZE
-        end_index = start_index + BUFFER_SIZE
-        packet_data = data[start_index:end_index]
-        # לבנות רגע את הבניה של ההודעה
+        start_index = seq * PACKET_SIZE
+        remaining = file_size - start_index
+        next_packet_size = min(remaining, PACKET_SIZE)
+        file = b"a" * next_packet_size
 
-    # try:
-    #     # message: bytes = dtat.encode()
-    #     # print(f"DBG: Sent request of length: {len(message)}")
+        # Building the massage by format
+        payload = build_payload_message_udp(packets_num, seq, file)
+
+        sock.sendto(payload, client_addr)
+        print(f"DBG: Sent response of length: {len(payload)}")
+
 
 
 
