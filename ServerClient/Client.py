@@ -3,9 +3,9 @@ import socket
 import threading
 import time
 from Constants import (
-    BROADCAST_PORT, BUFFER_SIZE, BROADCAST_IP, UDP_SERVER_PORT, TCP_SERVER_PORT
+    BROADCAST_PORT_TO, BUFFER_SIZE, BROADCAST_IP, UDP_SERVER_PORT, TCP_SERVER_PORT
 )
-from ServerClient.Message import pasred_message, create_request_message, parsed_payload
+from ServerClient.Message import pasred_message_offer, create_request_message, parsed_payload
 
 
 def main():
@@ -14,15 +14,17 @@ def main():
     while True:
         # server_ip, tcp_port, udp_port = start_up()
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.bind(("",BROADCAST_PORT))
+        sock.bind(("", BROADCAST_PORT_TO))
         # Keep Waiting for valid offer Message
         while True:
             offer_message, (server_ip, server_port) = sock.recvfrom(BUFFER_SIZE)
-            if valid_offer(offer_message):
-                server_ip, tcp_port, udp_port = pasred_message(offer_message)
+            try:
+                tcp_port, udp_port = pasred_message_offer(offer_message)
                 break
+            except Exception as e:
+                print(e)
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=tcp_num) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=udp_num) as executor:
             udp_thread = [
                 executor.submit(
                     run_udp,
@@ -31,7 +33,7 @@ def main():
             ]
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=tcp_num) as executor:
-            udp_thread = [
+            tcp_thread = [
                 executor.submit(
                     run_tcp,
                     server_ip = server_ip, tcp_port = tcp_port, file_size = file_size
@@ -42,13 +44,11 @@ def main():
 def start_up():
     while True:
         try:
-            file_size = input("Please enter file size (bytes): ")
-            tcp_num = input("Please enter number of TCP connections: ")
-            udp_num = input("Please Enter number of UDP connections: ")
+            file_size = int(input("Please enter file size (bytes): "))
+            tcp_num = int(input("Please enter number of TCP connections: "))
+            udp_num = int(input("Please Enter number of UDP connections: "))
 
             # Making sure user's input are valid
-            if not isinstance(file_size, int) or not isinstance(file_size, int) or not isinstance(file_size, int):
-                raise ValueError()
             if file_size <= 0 or tcp_num <= 0 or udp_num <= 0:
                 raise ValueError()
 
@@ -57,9 +57,6 @@ def start_up():
         except ValueError as e:
             print("Invalid input. Please enter positive integers only.")
 
-
-def waiting_for_offer():
-    pass
 
 def speed_test():
     pass
@@ -112,9 +109,7 @@ def run_tcp(server_ip, tcp_port, file_size):
     return duration_seconds, len(response)
 
 
-def valid_offer(offer_message):
-    #Need to insert logic
-    return True
+
 
 if __name__ == "__main__":
-    start_up()
+    main()

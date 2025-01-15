@@ -3,13 +3,13 @@ import threading
 import time
 
 from Constants import (
-    BROADCAST_PORT, BUFFER_SIZE, BROADCAST_IP, UDP_SERVER_PORT, TCP_SERVER_PORT
+    BROADCAST_PORT_TO, BROADCAST_PORT_FROM, BUFFER_SIZE, BROADCAST_IP, UDP_SERVER_PORT, TCP_SERVER_PORT
 )
 
 
 SERVER_IP = socket.gethostbyname(socket.gethostname())
-BROADCAST_ADDR_TO = (BROADCAST_IP, BROADCAST_PORT) # This address is to sent to all localhost
-BROADCAST_ADDR_FROM = (SERVER_IP, BROADCAST_PORT) # This is the address that the socket is on the server side
+BROADCAST_ADDR_TO = (BROADCAST_IP, BROADCAST_PORT_TO) # This address is to sent to all localhost
+BROADCAST_ADDR_FROM = (SERVER_IP, BROADCAST_PORT_FROM) # This is the address that the socket is on the server side
 
 # Constant
 
@@ -43,7 +43,6 @@ def broadcasting(udp_port, tcp_port) -> None:
     massage = b"Hello World!"
     while True:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.bind(BROADCAST_ADDR_FROM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         try:
             sock.sendto(massage, BROADCAST_ADDR_TO)
@@ -79,8 +78,6 @@ def sent_payload_tcp(client_sock):
         (f"Error processing TCP client request: {e}")
 
 
-
-
 def run_udp_server() -> None:
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind(SERVER_IP, UDP_SERVER_PORT)
@@ -106,8 +103,6 @@ def send_payload_udp(client_addr, data) -> None:
     # try:
     #     # message: bytes = dtat.encode()
     #     # print(f"DBG: Sent request of length: {len(message)}")
-
-
 
 
 
