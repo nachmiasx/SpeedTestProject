@@ -5,7 +5,7 @@ import time
 from Constants import (
     BROADCAST_PORT_TO, BUFFER_SIZE, BROADCAST_IP, UDP_SERVER_PORT, TCP_SERVER_PORT
 )
-from ServerClient.Message import pasred_message_offer, create_request_message, parsed_payload
+from ServerClient.Message import parsed_message_offer, build_request_message, parsed_message_payload
 
 
 def main():
@@ -19,7 +19,7 @@ def main():
         while True:
             offer_message, (server_ip, server_port) = sock.recvfrom(BUFFER_SIZE)
             try:
-                tcp_port, udp_port = pasred_message_offer(offer_message)
+                tcp_port, udp_port = parsed_message_offer(offer_message)
                 break
             except Exception as e:
                 print(e)
@@ -62,27 +62,28 @@ def speed_test():
     pass
 
 def run_udp(server_ip, udp_port, file_size):
-    request_message = create_request_message(file_size)
+    request_message = build_request_message(file_size)
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.bind(("", 0))  # port 0 means dynamic port allocation
         sock.sendto(request_message, (server_ip, udp_port))
 
         packet_acc = 0
-        expected = 1
         received_in_bytes = 0
+        expected = 1
 
         start_time = time.time()
         while True:
             try:
                 packet = sock.recv(BUFFER_SIZE)
 
-                total_segment_count, curr_segment = parsed_payload(packet)
+                total_segment_count, curr_segment, payload = parsed_message_payload(packet)
                 # לסדר פה את הלוגיקה של מה אנחנו רוצים כדי לעשות את החישובים
                 received_in_bytes += len(packet)
                 packet_acc += 1
                 expected = curr_segment+1
             except socket.timeout:
+                print("Socket timeout")
                 break
 
         end_time = time.time()
@@ -94,7 +95,7 @@ def run_udp(server_ip, udp_port, file_size):
 
 
 def run_tcp(server_ip, tcp_port, file_size):
-    request_message = create_request_message(file_size)
+    request_message = build_request_message(file_size)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(server_ip, tcp_port)

@@ -10,7 +10,7 @@ def _valid_message(magic_cookie, type, message_type):
         return False
     return True
 
-def pasred_message_offer(offer_message):
+def parsed_message_offer(offer_message):
         if len(offer_message) != 9:
             raise ValueError("Offer message incorrect length")
 
@@ -21,7 +21,7 @@ def pasred_message_offer(offer_message):
 
         return udp_port, tcp_port
 
-def pasred_message_request(request_message):
+def parsed_message_request(request_message):
     if len(request_message) != 13:
         raise ValueError("Request message incorrect length")
 
@@ -35,7 +35,7 @@ def pasred_message_request(request_message):
     return file_size
 
 
-def pasred_message_payload(payload_message):
+def parsed_message_payload(payload_message):
     if len(payload_message) < 21:
         raise ValueError("Payload message incorrect length")
 

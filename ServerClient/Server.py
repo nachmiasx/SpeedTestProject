@@ -7,7 +7,7 @@ from Constants import (
     BROADCAST_PORT_TO, BROADCAST_PORT_FROM, BUFFER_SIZE, BROADCAST_IP, UDP_SERVER_PORT, TCP_SERVER_PORT,
     PACKET_SIZE
 )
-from ServerClient.Message import build_offer_message, pasred_message_request, build_payload_message_udp
+from ServerClient.Message import build_offer_message, parsed_message_request, build_payload_message_udp
 
 SERVER_IP = socket.gethostbyname(socket.gethostname())
 BROADCAST_ADDR_TO = (BROADCAST_IP, BROADCAST_PORT_TO) # This address is to sent to all localhost
@@ -71,7 +71,7 @@ def run_tcp_server() -> None:
 def sent_payload_tcp(client_sock):
     try:
         message = client_sock.recv(BUFFER_SIZE)
-        file_size = pasred_message_request(message)
+        file_size = parsed_message_request(message)
 
         print(f"DBG: Received filesize of {BUFFER_SIZE} bytes")
 
@@ -94,7 +94,7 @@ def run_udp_server() -> None:
 
 
 def send_payload_udp(client_addr, data) -> None:
-    file_size = pasred_message_request(data)
+    file_size = parsed_message_request(data)
     packets_num = math.ceil(file_size/PACKET_SIZE)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
